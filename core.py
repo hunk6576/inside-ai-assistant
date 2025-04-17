@@ -1,7 +1,8 @@
-import openai
-from config import OPENAI_API_KEY
+import os
+from dotenv import load_dotenv
 
-openai.api_key = OPENAI_API_KEY
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 async def ask_gpt(prompt, system_prompt=None):
     try:
