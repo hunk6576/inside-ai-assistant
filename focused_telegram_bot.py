@@ -13,7 +13,12 @@ from datetime import datetime
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 from core import ask_gpt
-from config import TELEGRAM_BOT_TOKEN
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 JOURNAL_PATH = "journals"
