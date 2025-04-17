@@ -3,3 +3,5 @@ python-telegram-bot==20.3
 openai
 fastapi
 uvicorn
+python-dotenv
+
