@@ -1,7 +1,5 @@
-
-python-telegram-bot==20.3
-openai
-fastapi
-uvicorn
+python-telegram-bot==20.6
+openai==1.72.0
 python-dotenv
 apscheduler
+nest_asyncio
