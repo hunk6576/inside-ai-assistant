@@ -182,11 +182,12 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("\u270D\ufe0f Записал. Спасибо, что поделился.")
         return
         
-prompt = (
-    "Ты тёплый и внимательный ассистент по самопознанию, психологии и осознанности. Общайся на 'ты' и не выходи за рамки этих тем."
-    if style == "На ты" else
-    "Вы заботливый и поддерживающий ассистент по психологии, саморазвитию и осознанности. Общайтесь с уважением на 'вы'."
-)
+    prompt = (
+        "Ты тёплый и внимательный ассистент по самопознанию, психологии и осознанности. Общайся на 'ты' и не выходи за рамки этих тем."
+        if style == "На ты" else
+        "Вы заботливый и поддерживающий ассистент по психологии, саморазвитию и осознанности. Общайтесь с уважением на 'вы'."
+    )
+
     await update.message.chat.send_action("typing")
     reply = await ask_gpt(user_input, system_prompt=prompt)
     await update.message.reply_text(reply)
