@@ -17,9 +17,8 @@ os.makedirs(JOURNAL_PATH, exist_ok=True)
 os.makedirs(USER_PATH, exist_ok=True)
 
 BUTTONS = [
-    ["\U0001F31E Утро", "\U0001F319 Вечер"],
-    ["\U0001F4D6 Мой дневник", "\U0001F4AC Поговорим"],
-    ["\U0001F6E0 Настройки"]
+    ["📖 Мой дневник", "💬 Поговорим"],
+    ["🛠 Настройки"]
 ]
 reply_markup = ReplyKeyboardMarkup(BUTTONS, resize_keyboard=True)
 STYLE_CHOICES = ReplyKeyboardMarkup([["На ты", "На вы"]], resize_keyboard=True)
@@ -107,10 +106,13 @@ def schedule_user_messages(user_id, app):
 
 async def send_morning_message(app, user_id):
     try:
-        await app.bot.send_message(chat_id=user_id, text="\u2600\ufe0f Доброе утро! Чем хочешь наполнить день?")
-        user_contexts[user_id] = "\U0001F31E Утро"
+        await app.bot.send_message(
+            chat_id=user_id,
+            text="☀️ Доброе утро! Запиши, с каким настроем ты хочешь войти в день. Какие мысли или планы крутятся в голове?"
+        )
+        user_contexts[user_id] = "🌞 Утро"
     except Exception as e:
-        print(f"\u274C Утро: ошибка {user_id}: {e}")
+        print(f"❌ Утро: ошибка {user_id}: {e}")
 
 async def send_evening_message(app, user_id):
     try:
