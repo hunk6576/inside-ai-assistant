@@ -194,7 +194,7 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Вы заботливый и поддерживающий ассистент. Общайтесь с уважением на 'вы'."
     )
     await update.message.chat.send_action("typing")
-          reply = await ask_gpt(user_input, system_prompt=prompt)
+    reply = await ask_gpt(user_input, system_prompt=prompt)
     await update.message.reply_text(reply)
 
 async def run_bot():
