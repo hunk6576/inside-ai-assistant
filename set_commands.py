@@ -1,17 +1,23 @@
-
 from telegram import BotCommand
 from telegram.ext import ApplicationBuilder
-from config import TELEGRAM_BOT_TOKEN
+import os
+from dotenv import load_dotenv
 
-async def set_menu():
+load_dotenv()
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
+commands = [
+    BotCommand("start", "Перезапустить бота"),
+    BotCommand("history", "Показать дневник"),
+    BotCommand("talk", "Просто поболтать")
+]
+
+async def set_commands():
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-    commands = [
-        BotCommand("start", "Перезапустить бота"),
-        BotCommand("history", "Показать дневник"),
-        BotCommand("talk", "Просто поболтать")
-    ]
     await app.bot.set_my_commands(commands)
-    print("✅ Команды Telegram успешно установлены.")
+    print("✅ Команды обновлены")
 
-import asyncio
-asyncio.run(set_menu())
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(set_commands())
