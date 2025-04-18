@@ -1,5 +1,5 @@
-python-telegram-bot==20.6
-openai==1.72.0
-python-dotenv
-apscheduler
-nest_asyncio
+python-telegram-bot==20.7
+openai==1.17.1
+python-dotenv==1.0.1
+apscheduler==3.10.4
+nest_asyncio==1.6.0
