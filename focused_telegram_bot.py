@@ -159,14 +159,6 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("\u2705 Время напоминаний обновлено!", reply_markup=reply_markup)
         return
 
-    if user_input in ["\U0001F31E Утро", "\U0001F319 Вечер"]:
-        context.user_data["awaiting_journal"] = user_input
-        await update.message.reply_text(
-            "Чем ты хочешь наполнить день?" if user_input == "\U0001F31E Утро" else
-            "Как прошёл твой день? Что было важного или волнующего?"
-        )
-        return
-
     if user_input == "\U0001F4D6 Мой дневник":
         path = f"{JOURNAL_PATH}/{user_id}.txt"
         if not os.path.exists(path):
