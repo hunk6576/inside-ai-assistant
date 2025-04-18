@@ -7,8 +7,6 @@ async def set_menu():
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
     commands = [
         BotCommand("start", "Перезапустить бота"),
-        BotCommand("morning", "Утренний настрой"),
-        BotCommand("evening", "Записать мысли вечером"),
         BotCommand("history", "Показать дневник"),
         BotCommand("talk", "Просто поболтать")
     ]
