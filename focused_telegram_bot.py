@@ -63,6 +63,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup
         )
 
+async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Во сколько тебе присылать утреннее сообщение? (например, 08:00)")
+    context.user_data["settings_step"] = "set_morning"
+
 async def save_style(update: Update, context: ContextTypes.DEFAULT_TYPE):
     style = update.message.text
     if style not in ["На ты", "На вы"]:
@@ -212,8 +216,8 @@ async def run_bot():
     await set_commands(app)
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("settings", settings))  # <- новая строка
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
-    app.add_handler(CommandHandler("settings", settings))
 
     scheduler.start()
     await app.initialize()
