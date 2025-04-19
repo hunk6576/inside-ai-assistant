@@ -201,6 +201,10 @@ async def set_commands(app):
         BotCommand("talk", "Просто поболтать"),
         BotCommand("settings", "Настроить время напоминаний")
     ])
+
+async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["settings_step"] = "set_morning"
+    await update.message.reply_text("Во сколько тебе присылать утреннее сообщение? (например, 08:00)")
     
 async def run_bot():
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
@@ -209,6 +213,7 @@ async def run_bot():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
+    app.add_handler(CommandHandler("settings", settings))
 
     scheduler.start()
     await app.initialize()
