@@ -7,12 +7,16 @@ load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
-commands = [
-    BotCommand("start", "Перезапустить бота"),
-    BotCommand("history", "Показать дневник"),
-    BotCommand("talk", "Просто поболтать")
-]
+from telegram import BotCommand
 
+async def set_commands(app):
+    await app.bot.set_my_commands([
+        BotCommand("start", "Перезапустить бота"),
+        BotCommand("history", "Показать дневник"),
+        BotCommand("talk", "Просто поболтать"),
+        BotCommand("settings", "Настроить время напоминаний")
+    ])
+    
 async def set_commands():
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
     await app.bot.set_my_commands(commands)
