@@ -194,6 +194,9 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def run_bot():
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+
+    await set_commands(app)
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
 
