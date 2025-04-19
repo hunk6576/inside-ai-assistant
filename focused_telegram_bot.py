@@ -191,7 +191,17 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.chat.send_action("typing")
     reply = await ask_gpt(user_input, system_prompt=prompt)
     await update.message.reply_text(reply)
+    
+from telegram import BotCommand
 
+async def set_commands(app):
+    await app.bot.set_my_commands([
+        BotCommand("start", "Перезапустить бота"),
+        BotCommand("history", "Показать дневник"),
+        BotCommand("talk", "Просто поболтать"),
+        BotCommand("settings", "Настроить время напоминаний")
+    ])
+    
 async def run_bot():
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
 
