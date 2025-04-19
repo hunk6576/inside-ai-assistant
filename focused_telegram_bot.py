@@ -134,23 +134,48 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_data = json.load(f)
         style = user_data.get("style", "На ты")
 
+    # Обработка "умной кнопки Назад"
     if user_input == "◀️ Назад":
-        await update.message.reply_text("⬅️ Возвращаю тебя в главное меню:", reply_markup=reply_markup)
-        context.user_data.pop("settings_step", None)
+        last_context = context.user_data.get("last_context", "main")
+        if last_context == "settings":
+            await update.message.reply_text("🛠 Настройки", reply_markup=reply_markup)
+        elif last_context == "journal":
+            await update.message.reply_text("📖 Мой дневник", reply_markup=reply_markup)
+        else:
+            await update.message.reply_text("📋 Главное меню", reply_markup=reply_markup)
         return
 
+    # Сохраняем предыдущий контекст
+    if user_input in ["🛠 Настройки", "📖 Мой дневник", "💬 Поговорим", "🌞 Утро", "🌙 Вечер"]:
+        context.user_data["last_context"] = (
+            "settings" if user_input == "🛠 Настройки" else
+            "journal" if user_input == "📖 Мой дневник" else
+            "main"
+        )
+
+    # Обработка настроек
     if user_input == "🛠 Настройки":
         context.user_data["settings_step"] = "set_morning"
-        await update.message.reply_text("Во сколько тебе присылать утреннее сообщение? (например, 08:00)", reply_markup=back_markup)
+        await update.message.reply_text("Во сколько тебе присылать утреннее сообщение? (например, 08:00)")
         return
 
     if context.user_data.get("settings_step") == "set_morning":
         if ":" not in user_input or not all(part.isdigit() for part in user_input.split(":")):
-            await update.message.reply_text("⛔ Неверный формат. Пожалуйста, используй формат HH:MM", reply_markup=back_markup)
+            await update.message.reply_text("⛔ Неверный формат. Пожалуйста, используй формат HH:MM")
             return
         save_user_time(user_id, morning_time=user_input)
         context.user_data["settings_step"] = "set_evening"
-        await update.message.reply_text("А вечернее? (например, 21:00)", reply_markup=back_markup)
+        await update.message.reply_text("А вечернее? (например, 21:00)")
+        return
+
+    if context.user_data.get("settings_step") == "set_evening":
+        if ":" not in user_input or not all(part.isdigit() for part in user_input.split(":")):
+            await update.message.reply_text("⛔ Неверный формат. Пожалуйста, используй формат HH:MM")
+            return
+        save_user_time(user_id, evening_time=user_input)
+        context.user_data.pop("settings_step")
+        schedule_user_messages(user_id, context.application)
+        await update.message.reply_text("✅ Время напоминаний обновлено!", reply_markup=reply_markup)
         return
 
     if context.user_data.get("settings_step") == "set_evening":
