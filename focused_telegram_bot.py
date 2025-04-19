@@ -1,8 +1,8 @@
-from dotenv import load_dotenv
 import os
 import json
 import asyncio
 from datetime import datetime
+from dotenv import load_dotenv
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -11,7 +11,6 @@ from core import ask_gpt
 load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 JOURNAL_PATH = "journals"
 USER_PATH = "users"
@@ -24,7 +23,7 @@ BUTTONS = [
 ]
 reply_markup = ReplyKeyboardMarkup(BUTTONS, resize_keyboard=True)
 STYLE_CHOICES = ReplyKeyboardMarkup([["На ты", "На вы"]], resize_keyboard=True)
-BACK_BUTTON = ReplyKeyboardMarkup([["◀️ Назад"]], resize_keyboard=True)
+back_markup = ReplyKeyboardMarkup([["◀️ Назад"]], resize_keyboard=True)
 
 user_contexts = {}
 user_schedulers = {}
@@ -54,6 +53,7 @@ def load_user_time(user_id):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user_file = f"{USER_PATH}/{user_id}.json"
+
     if not os.path.exists(user_file):
         await update.message.reply_text(
             "Привет! 👋\nКак ты хочешь, чтобы я с тобой общался?",
@@ -69,6 +69,7 @@ async def save_style(update: Update, context: ContextTypes.DEFAULT_TYPE):
     style = update.message.text
     if style not in ["На ты", "На вы"]:
         return False
+
     user_id = update.effective_user.id
     user_file = f"{USER_PATH}/{user_id}.json"
     data = {"style": style}
@@ -76,8 +77,10 @@ async def save_style(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with open(user_file, "r", encoding="utf-8") as f:
             existing = json.load(f)
         data.update(existing)
+
     with open(user_file, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False)
+
     await update.message.reply_text(
         f"Отлично, теперь я буду обращаться {'на ты' if style == 'На ты' else 'на вы'} 😊",
         reply_markup=reply_markup
@@ -86,47 +89,42 @@ async def save_style(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def schedule_user_messages(user_id, app):
     morning_time, evening_time = load_user_time(user_id)
+
     def parse_time(t):
         h, m = map(int, t.split(":"))
         return h, m
+
     if user_id in user_schedulers:
         job_ids = user_schedulers[user_id]
         for job_id in job_ids:
             scheduler.remove_job(job_id)
+
     morning_hour, morning_minute = parse_time(morning_time)
     evening_hour, evening_minute = parse_time(evening_time)
+
     m_job = scheduler.add_job(send_morning_message, "cron", hour=morning_hour, minute=morning_minute, args=[app, user_id])
     e_job = scheduler.add_job(send_evening_message, "cron", hour=evening_hour, minute=evening_minute, args=[app, user_id])
     user_schedulers[user_id] = [m_job.id, e_job.id]
 
 async def send_morning_message(app, user_id):
     try:
-        await app.bot.send_message(chat_id=user_id, text="☀️ Доброе утро! Чем хочешь наполнить день?")
+        await app.bot.send_message(chat_id=user_id, text="☀️ Доброе утро! Хочешь что-то запланировать или выразить свои мысли?")
         user_contexts[user_id] = "🌞 Утро"
     except Exception as e:
         print(f"❌ Утро: ошибка {user_id}: {e}")
 
 async def send_evening_message(app, user_id):
     try:
-        await app.bot.send_message(chat_id=user_id, text="🌙 Как прошёл день? Запиши мысли или идеи 📓")
+        await app.bot.send_message(chat_id=user_id, text="🌙 Как прошёл день? Запиши свои мысли или идеи 📓")
         user_contexts[user_id] = "🌙 Вечер"
     except Exception as e:
         print(f"❌ Вечер: ошибка {user_id}: {e}")
 
-async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["settings_step"] = "set_morning"
-    await update.message.reply_text("Во сколько тебе присылать утреннее сообщение? (например, 08:00)", reply_markup=BACK_BUTTON)
-
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user_input = update.message.text.strip()
+
     user_file = f"{USER_PATH}/{user_id}.json"
-
-    if user_input == "◀️ Назад":
-        context.user_data.clear()
-        await update.message.reply_text("Ты в главном меню!", reply_markup=reply_markup)
-        return
-
     if not os.path.exists(user_file):
         saved = await save_style(update, context)
         if saved:
@@ -135,6 +133,31 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with open(user_file, "r", encoding="utf-8") as f:
         user_data = json.load(f)
         style = user_data.get("style", "На ты")
+
+    # Обработка "умной кнопки Назад"
+    if user_input == "◀️ Назад":
+        last_context = context.user_data.get("last_context", "main")
+        if last_context == "settings":
+            await update.message.reply_text("🛠 Настройки", reply_markup=reply_markup)
+        elif last_context == "journal":
+            await update.message.reply_text("📖 Мой дневник", reply_markup=reply_markup)
+        else:
+            await update.message.reply_text("📋 Главное меню", reply_markup=reply_markup)
+        return
+
+    # Сохраняем предыдущий контекст
+    if user_input in ["🛠 Настройки", "📖 Мой дневник", "💬 Поговорим", "🌞 Утро", "🌙 Вечер"]:
+        context.user_data["last_context"] = (
+            "settings" if user_input == "🛠 Настройки" else
+            "journal" if user_input == "📖 Мой дневник" else
+            "main"
+        )
+
+    # Обработка настроек
+    if user_input == "🛠 Настройки":
+        context.user_data["settings_step"] = "set_morning"
+        await update.message.reply_text("Во сколько тебе присылать утреннее сообщение? (например, 08:00)")
+        return
 
     if context.user_data.get("settings_step") == "set_morning":
         if ":" not in user_input or not all(part.isdigit() for part in user_input.split(":")):
@@ -150,7 +173,17 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("⛔ Неверный формат. Пожалуйста, используй формат HH:MM")
             return
         save_user_time(user_id, evening_time=user_input)
-        context.user_data.clear()
+        context.user_data.pop("settings_step")
+        schedule_user_messages(user_id, context.application)
+        await update.message.reply_text("✅ Время напоминаний обновлено!", reply_markup=reply_markup)
+        return
+
+    if context.user_data.get("settings_step") == "set_evening":
+        if ":" not in user_input or not all(part.isdigit() for part in user_input.split(":")):
+            await update.message.reply_text("⛔ Неверный формат. Пожалуйста, используй формат HH:MM", reply_markup=back_markup)
+            return
+        save_user_time(user_id, evening_time=user_input)
+        context.user_data.pop("settings_step")
         schedule_user_messages(user_id, context.application)
         await update.message.reply_text("✅ Время напоминаний обновлено!", reply_markup=reply_markup)
         return
@@ -167,7 +200,7 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if user_input == "💬 Поговорим":
-        await update.message.reply_text("О чём хочешь поговорить? Я рядом 🙌")
+        await update.message.reply_text("О чём хочешь поговорить? Я рядом 🙌", reply_markup=back_markup)
         return
 
     if context.user_data.get("awaiting_journal") or user_id in user_contexts:
@@ -179,7 +212,7 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     prompt = (
-        "Ты тёплый и внимательный ассистент по самопознанию, психологии и осознанности. Общайся на 'ты' и не выходи за рамки этих тем."
+        "Ты тёплый и внимательный ассистент по самопознанию, психологии и осознанности. Общайся на 'ты'."
         if style == "На ты" else
         "Вы заботливый и поддерживающий ассистент по психологии, саморазвитию и осознанности. Общайтесь с уважением на 'вы'."
     )
@@ -190,18 +223,14 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def run_bot():
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("settings", settings_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
     scheduler.start()
     await app.initialize()
-    for user_id in app.user_data:
-        schedule_user_messages(user_id, app)
     await app.run_polling(close_loop=False)
 
 if __name__ == "__main__":
     import nest_asyncio
     nest_asyncio.apply()
-    print("✅ Бот запущен с автонапоминаниями и настройками 🕗")
-    loop = asyncio.get_event_loop()
-    loop.create_task(run_bot())
-    loop.run_forever()
+
+    print("✅ Бот запущен с автонапоминаниями и кнопкой 'Назад'")
+    asyncio.run(run_bot())
